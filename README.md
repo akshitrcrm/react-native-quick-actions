@@ -100,8 +100,6 @@ Name the image with underscores, don't use hyphens.
 ### Listening for quick actions
 
 When app is in background, you need to listen to the actions.
-First, you'll need to make sure `DeviceEventEmitter` is added to the list of
-requires for React Native.
 
 ```js
 import QuickActions from "react-native";
