@@ -29,27 +29,6 @@ Add the following lines to your `AppDelegate.m` file:
 // @end
 ```
 
-### Manual Linking on Android
-
-Add the following to `app/build.gradle` within the `dependencies { ... }` section
-
-```java
-implementation project(':react-native-quick-actions')
-````
-
-Add `import com.reactNativeQuickActions.AppShortcutsPackage;` to your `MainApplication.java`
-
-Also add `new AppShortcutsPackage()` within the 
-
-```java
-public List<ReactPackage> createAdditionalReactPackages() {
-  return Arrays.<ReactPackage>asList(
-    ...
-  );
-}
-```
-section of `MainApplication.java`
-
 ## Usage
 
 ### Adding static quick actions - iOS only
@@ -74,7 +53,7 @@ A full list of available icons can be found here:
 
 <https://developer.apple.com/design/human-interface-guidelines/ios/icons-and-images/system-icons/#quick-action-icons>
 
-### Adding dynamic quick actions
+### Adding dynamic quick actions (only option available for android as of now)
 
 In order to add / remove dynamic actions during application lifecycle, you need to import `react-native-quick-actions` and call either `setShortcutItems` to set actions or `clearShortcutItems` to clear.
 
@@ -120,21 +99,28 @@ Name the image with underscores, don't use hyphens.
 
 ### Listening for quick actions
 
+When app is in background, you need to listen to the actions.
 First, you'll need to make sure `DeviceEventEmitter` is added to the list of
 requires for React Native.
 
 ```js
-import { DeviceEventEmitter } from "react-native";
+import QuickActions from "react-native";
 ```
 
-Use `DeviceEventEmitter` to listen for `quickActionShortcut` messages.
+Use `quickActionEmitter` to listen for `quickActionEventName` messages.
 
 ```js
-DeviceEventEmitter.addListener("quickActionShortcut", data => {
-  console.log(data.title);
-  console.log(data.type);
-  console.log(data.userInfo);
-});
+const listener = QuickActions.quickActionEmitter.addListener(QuickActions.quickActionEventName, (data) => {
+      console.log('data here', data)
+      if (data) {
+        // handleQuickAction(data.type)
+      }
+    })
+    
+ // remove listener at unmount
+ return () => {
+    listener.remove()
+  }
 ```
 
 To get any actions sent when the app is cold-launched using the following code:
