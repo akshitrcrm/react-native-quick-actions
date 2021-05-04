@@ -1,4 +1,6 @@
-var RNQuickActionManager = require('react-native').NativeModules.RNQuickActionManager;
+import { NativeModules, NativeEventEmitter } from 'react-native';
+
+var RNQuickActionManager = NativeModules.RNQuickActionManager;
 var _initialAction = RNQuickActionManager && RNQuickActionManager.initialAction;
 
 module.exports = {
@@ -16,6 +18,9 @@ module.exports = {
       resolve(initialAction);
     })
   },
+
+  quickActionEmitter: new NativeEventEmitter(RNQuickActionManager),
+  quickActionEventName: 'quickActionShortcut',
 
   /**
    * Adds shortcut items to application

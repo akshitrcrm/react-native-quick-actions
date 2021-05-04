@@ -1,4 +1,6 @@
-var ReactAppShortcuts = require('react-native').NativeModules.ReactAppShortcuts;
+import { NativeModules, NativeEventEmitter } from 'react-native';
+
+var ReactAppShortcuts = NativeModules.ReactAppShortcuts;
 
 module.exports = {
   /**
@@ -11,7 +13,8 @@ module.exports = {
   popInitialAction: function() {
     return ReactAppShortcuts.popInitialAction();
   },
-
+  quickActionEmitter: new NativeEventEmitter(ReactAppShortcuts),
+  quickActionEventName: 'quickActionShortcut',
   /**
    * Adds shortcut items to application
    */

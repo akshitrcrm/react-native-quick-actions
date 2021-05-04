@@ -8,13 +8,14 @@
 
 #import <React/RCTBridge.h>
 #import <React/RCTConvert.h>
-#import <React/RCTEventDispatcher.h>
 #import <React/RCTUtils.h>
 #import "RNQuickActionManager.h"
 
 NSString *const RCTShortcutItemClicked = @"ShortcutItemClicked";
 
 NSDictionary *RNQuickAction(UIApplicationShortcutItem *item) {
+//    NSLog(@"RNQuickAction %@, %@, %@", item.type,item.localizedTitle,item.userInfo);
+    RCTLogInfo(@"RNQuickAction %@, %@, %@", item.type,item.localizedTitle,item.userInfo);
     if (!item) return nil;
     return @{
         @"type": item.type,
@@ -30,17 +31,45 @@ NSDictionary *RNQuickAction(UIApplicationShortcutItem *item) {
 
 RCT_EXPORT_MODULE();
 
-@synthesize bridge = _bridge;
+static id _instace;
 
-- (instancetype)init
++ (instancetype)allocWithZone:(struct _NSZone *)zone {
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _instace = [super allocWithZone:zone];
+    });
+    return _instace;
+}
+
+//@synthesize bridge = _bridge;
+
+- (NSArray<NSString *> *)supportedEvents
 {
-    if ((self = [super init])) {
-        [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(handleQuickActionPress:)
-                                                     name:RCTShortcutItemClicked
-                                                   object:nil];
-    }
-    return self;
+    return @[@"quickActionShortcut"];
+}
+
+//- (instancetype)init
+//{
+//    if ((self = [super init])) {
+//        [[NSNotificationCenter defaultCenter] addObserver:self
+//                                                 selector:@selector(handleQuickActionPress:)
+//                                                     name:RCTShortcutItemClicked
+//                                                   object:nil];
+//    }
+//    return self;
+//}
+
+- (void)startObserving
+{
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleQuickActionPress:)
+                                                 name:RCTShortcutItemClicked
+                                               object:nil];
+}
+
+- (void)stopObserving
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (dispatch_queue_t)methodQueue {
@@ -51,14 +80,17 @@ RCT_EXPORT_MODULE();
     return YES;
 }
 
-- (void)dealloc
-{
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
-}
+//- (void)dealloc
+//{
+//    [[NSNotificationCenter defaultCenter] removeObserver:self];
+//}
 
 - (void)setBridge:(RCTBridge *)bridge
 {
-    _bridge = bridge;
+//    NSLog(@"calling SetBrige %@", bridge.launchOptions);
+    RCTLogInfo(@"calling SetBrige %@", bridge.launchOptions);
+    [super setBridge:bridge];
+//    _bridge = bridge;
     _initialAction = [bridge.launchOptions[UIApplicationLaunchOptionsShortcutItemKey] copy];
 }
 
@@ -134,9 +166,14 @@ RCT_EXPORT_METHOD(setShortcutItems:(NSArray *) shortcutItems)
 
 RCT_EXPORT_METHOD(isSupported:(RCTResponseSenderBlock)callback)
 {
-    BOOL supported = [[UIApplication sharedApplication].delegate.window.rootViewController.traitCollection forceTouchCapability] == UIForceTouchCapabilityAvailable;
-
-    callback(@[[NSNull null], [NSNumber numberWithBool:supported]]);
+    BOOL supported = NO;
+       NSString *systemVersion = [UIDevice currentDevice].systemVersion;
+       if (systemVersion.doubleValue >= 13.0) { // 13以后去掉所有设备的3dtouch
+           supported = YES;
+       } else { // 13以前
+           supported = [[UIApplication sharedApplication].delegate.window.rootViewController.traitCollection forceTouchCapability] == UIForceTouchCapabilityAvailable;
+       }
+       callback(@[[NSNull null], [NSNumber numberWithBool:supported]]);
 }
 
 RCT_EXPORT_METHOD(clearShortcutItems)
@@ -147,7 +184,7 @@ RCT_EXPORT_METHOD(clearShortcutItems)
 + (void)onQuickActionPress:(UIApplicationShortcutItem *) shortcutItem completionHandler:(void (^)(BOOL succeeded)) completionHandler
 {
     RCTLogInfo(@"[RNQuickAction] Quick action shortcut item pressed: %@", [shortcutItem type]);
-
+//    NSLog(@"[RNQuickAction] Quick action shortcut item pressed: %@", [shortcutItem type]);
     [[NSNotificationCenter defaultCenter] postNotificationName:RCTShortcutItemClicked
                                                         object:self
                                                       userInfo:RNQuickAction(shortcutItem)];
@@ -157,8 +194,9 @@ RCT_EXPORT_METHOD(clearShortcutItems)
 
 - (void)handleQuickActionPress:(NSNotification *) notification
 {
-    [_bridge.eventDispatcher sendDeviceEventWithName:@"quickActionShortcut"
-                                                body:notification.userInfo];
+    RCTLogInfo(@"quickActionShortcut handleQuickActionPress %@", notification.userInfo);
+//    NSLog(@"quickActionShortcut handleQuickActionPress %@", notification.userInfo);
+    [self sendEventWithName:@"quickActionShortcut" body: notification.userInfo];
 }
 
 - (NSDictionary *)constantsToExport
